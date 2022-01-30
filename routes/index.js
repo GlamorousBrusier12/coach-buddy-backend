@@ -1,16 +1,17 @@
 import express from "express";
 import { User } from "../models/User.js";
 export const router = express.Router();
-import { postRouter } from "./course.js";
+import { courseRouter } from "./course.js";
 
-router.use("/course", postRouter);
+router.use("/course", courseRouter);
 
-// router.get("/", (req, res) => {
-//   res.status(200).json({
-//     message: "OK",
-//     type: "api",
-//   });
-// });
+router.get("/users", async (req, res) => {
+  const users = await User.find({}).exec();
+  res.status(200).json({
+    message: "OK",
+    data: users,
+  });
+});
 
 router.post("/createuser", async (req, res) => {
   try {

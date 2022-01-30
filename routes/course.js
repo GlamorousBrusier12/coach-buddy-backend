@@ -2,14 +2,14 @@ import express from "express";
 import mongoose from "mongoose";
 import { Course } from "../models/Course.js";
 import { User } from "../models/User.js";
-export const postRouter = express.Router();
+export const courseRouter = express.Router();
 
-postRouter.get("/", async (req, res) => {
+courseRouter.get("/", async (req, res) => {
   const courses = await Course.find({}).exec();
   res.status(200).json({ data: courses });
 });
 
-postRouter.get("/create", async (req, res) => {
+courseRouter.get("/create", async (req, res) => {
   const courses = [
     {
       name: "GK",
@@ -82,12 +82,16 @@ postRouter.get("/create", async (req, res) => {
     res.status(400).end();
   }
 });
-postRouter.post("/enroll/:id", async (req, res) => {
+courseRouter.post("/enroll/:id", async (req, res) => {
   const courseId = req.params.id;
   const user = { name: req.body.name, email: req.body.email };
   try {
     const courseDetails = await Course.findById(courseId);
-    const userDetails = await User.findOne({ email: user.email }).exec();
+    let userDetails = await User.findOne({ email: user.email }).exec();
+    if (!userDetails) {
+      const newUser = await User.create(user);
+      userDetails = newUser;
+    }
     let alreadyRegistered = false;
     courseDetails.enrolledStudents.forEach((u) => {
       if (u._id.toString() === userDetails._id.toString()) {
@@ -130,5 +134,47 @@ postRouter.post("/enroll/:id", async (req, res) => {
   } catch (e) {
     console.log(e);
     res.status(404).json({ message: e });
+  }
+});
+
+// unenroll from the course
+courseRouter.post("/unenroll/:id", async (req, res) => {
+  const courseId = req.params.id;
+  const user = { name: req.body.name, email: req.body.email };
+  try {
+    const courseDetails = await Course.findById(courseId);
+    let userDetails = await User.findOne({ email: user.email }).exec();
+    if (!userDetails) {
+      const newUser = await User.create(user);
+      res.status(400).json({ message: "not registered to any course" });
+    }
+    let inEnrolledList = false;
+    courseDetails.enrolledStudents.forEach((u, index) => {
+      if (u._id.toString() === userDetails._id.toString()) {
+        courseDetails.enrolledStudents.splice(index, 1);
+        inEnrolledList = true;
+        if (courseDetails.waitingList.length !== 0) {
+          let newCandidate = courseDetails.waitingList.shift();
+          courseDetails.enrolledStudents.push(newCandidate);
+          courseDetails.save();
+        }
+        return;
+      }
+    });
+    if (!inEnrolledList) {
+      courseDetails.waitingList.forEach((u, index) => {
+        if (u._id.toString() === userDetails._id.toString()) {
+          console.log("true", index);
+          courseDetails.waitingList.splice(index, 1);
+          inEnrolledList = true;
+          courseDetails.save();
+          return;
+        }
+      });
+    }
+    res.status(200).json({ status: "unenrolled" });
+  } catch (e) {
+    console.log(e);
+    res.status(500).end();
   }
 });
