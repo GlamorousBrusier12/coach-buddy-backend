@@ -1,0 +1,28 @@
+{
+  "name": "coach-buddy-backend",
+  "version": "1.0.0",
+  "description": "backend for coach buddy",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GlamorousBrusier12/coach-buddy-backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GlamorousBrusier12/coach-buddy-backend/issues"
+  },
+  "homepage": "https://github.com/GlamorousBrusier12/coach-buddy-backend#readme",
+  "dependencies": {
+    "body-parser": "^1.19.1",
+    "cors": "^2.8.5",
+    "express": "^4.17.2",
+    "mongoose": "^6.1.8",
+    "nodemon": "^2.0.15"
+  }
+}
