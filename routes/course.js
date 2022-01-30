@@ -16,7 +16,7 @@ courseRouter.get("/create", async (req, res) => {
       description: "General knowledge is information",
       maxCapacity: 60,
       startsOn: {
-        date: Date.now(),
+        date: "2021-09-19",
         time: "04:45",
       },
       enrolledStudents: [],
@@ -29,7 +29,7 @@ courseRouter.get("/create", async (req, res) => {
       description: "General knowledge is information",
       maxCapacity: 60,
       startsOn: {
-        date: Date.now(),
+        date: "2021-09-19",
         time: "04:45",
       },
       enrolledStudents: [],
@@ -41,7 +41,7 @@ courseRouter.get("/create", async (req, res) => {
       description: "General knowledge is information",
       maxCapacity: 60,
       startsOn: {
-        date: Date.now(),
+        date: "2021-09-19",
         time: "04:45",
       },
       enrolledStudents: [],
@@ -53,7 +53,7 @@ courseRouter.get("/create", async (req, res) => {
       description: "General knowledge is information",
       maxCapacity: 60,
       startsOn: {
-        date: Date.now(),
+        date: "2021-09-19",
         time: "04:45",
       },
       enrolledStudents: [],
@@ -65,7 +65,7 @@ courseRouter.get("/create", async (req, res) => {
       description: "General knowledge is information",
       maxCapacity: 60,
       startsOn: {
-        date: Date.now(),
+        date: "2021-09-19",
         time: "04:45",
       },
       enrolledStudents: [],
@@ -79,6 +79,7 @@ courseRouter.get("/create", async (req, res) => {
       .status(200)
       .json({ message: "Courses created", data: newCreatedCourses });
   } catch (e) {
+    console.log(e);
     res.status(400).end();
   }
 });
@@ -86,7 +87,10 @@ courseRouter.post("/enroll/:id", async (req, res) => {
   const courseId = req.params.id;
   const user = { name: req.body.name, email: req.body.email };
   try {
-    const courseDetails = await Course.findById(courseId);
+    const courseDetails = await Course.findById(courseId)
+      .populate("enrolledStudents")
+      .exec();
+    console.log("populated CourseDetails ", courseDetails);
     let userDetails = await User.findOne({ email: user.email }).exec();
     if (!userDetails) {
       const newUser = await User.create(user);
@@ -137,6 +141,28 @@ courseRouter.post("/enroll/:id", async (req, res) => {
   }
 });
 
+function checkEligibility(courseDetails) {
+  const hrs = parseInt(courseDetails.time.slice(0, 2));
+  const min = parseInt(courseDetails.time.slice(3));
+  const today = new Date();
+  let deadline = new Date(courseDetails.date);
+  let date1 = new Date().toISOString().slice(0, 10);
+  deadline = deadline.toISOString().slice(0, 10);
+  // console.log(date1);
+  // console.log(deadline);
+  if (date1 < deadline) {
+    return true;
+  } else if (date1 > deadline) {
+    return false;
+  }
+  // console.log("comp time");
+  const currentTime = today.getHours() * 60 + today.getMinutes();
+  const deadlinetime = hrs * 60 + min;
+  if (deadlinetime - currentTime <= 30) {
+    return false;
+  }
+  return true;
+}
 // unenroll from the course
 courseRouter.post("/unenroll/:id", async (req, res) => {
   const courseId = req.params.id;
@@ -145,9 +171,15 @@ courseRouter.post("/unenroll/:id", async (req, res) => {
     const courseDetails = await Course.findById(courseId);
     let userDetails = await User.findOne({ email: user.email }).exec();
     if (!userDetails) {
-      const newUser = await User.create(user);
       res.status(400).json({ message: "not registered to any course" });
     }
+    if (!checkEligibility(courseDetails.startsOn)) {
+      return res.status(400).json({
+        message: "cannot unenroll in last minute",
+        status: "unenroll failed",
+      });
+    }
+
     let inEnrolledList = false;
     courseDetails.enrolledStudents.forEach((u, index) => {
       if (u._id.toString() === userDetails._id.toString()) {
@@ -156,8 +188,8 @@ courseRouter.post("/unenroll/:id", async (req, res) => {
         if (courseDetails.waitingList.length !== 0) {
           let newCandidate = courseDetails.waitingList.shift();
           courseDetails.enrolledStudents.push(newCandidate);
-          courseDetails.save();
         }
+        courseDetails.save();
         return;
       }
     });
@@ -171,6 +203,9 @@ courseRouter.post("/unenroll/:id", async (req, res) => {
           return;
         }
       });
+    }
+    if (!inEnrolledList) {
+      return res.status(400).json({ message: "not registered to any course" });
     }
     res.status(200).json({ status: "unenrolled" });
   } catch (e) {
