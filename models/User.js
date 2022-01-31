@@ -10,6 +10,13 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    enrolledCourses: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "course",
+        unique: true,
+      },
+    ],
   },
   { timestamps: true }
 );

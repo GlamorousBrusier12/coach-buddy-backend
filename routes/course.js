@@ -90,7 +90,7 @@ courseRouter.post("/enroll/:id", async (req, res) => {
     const courseDetails = await Course.findById(courseId)
       .populate("enrolledStudents")
       .exec();
-    console.log("populated CourseDetails ", courseDetails);
+    //console.log("populated CourseDetails ", courseDetails);
     let userDetails = await User.findOne({ email: user.email }).exec();
     if (!userDetails) {
       const newUser = await User.create(user);
@@ -124,6 +124,8 @@ courseRouter.post("/enroll/:id", async (req, res) => {
       }
       courseDetails.waitingList.push(userDetails._id);
       await courseDetails.save();
+      await userDetails.enrolledCourses.push(courseDetails._id);
+      await userDetails.save();
       res.status(200).json({
         message: "max capacity reached, entered into waiting list",
         status: "added to waiting list",
@@ -131,6 +133,8 @@ courseRouter.post("/enroll/:id", async (req, res) => {
     } else {
       courseDetails.enrolledStudents.push(userDetails._id);
       await courseDetails.save();
+      await userDetails.enrolledCourses.push(courseDetails._id);
+      await userDetails.save();
       res
         .status(200)
         .json({ message: "sucessfully enrolled", status: "enrolled" });
@@ -193,10 +197,18 @@ courseRouter.post("/unenroll/:id", async (req, res) => {
         return;
       }
     });
+    userDetails.enrolledCourses.forEach((c, index) => {
+      if (c._id.toString() === courseDetails._id.toString()) {
+        userDetails.enrolledCourses.splice(index, 1);
+        userDetails.save();
+        //console.log("removed");
+        return;
+      }
+    });
     if (!inEnrolledList) {
       courseDetails.waitingList.forEach((u, index) => {
         if (u._id.toString() === userDetails._id.toString()) {
-          console.log("true", index);
+          //console.log("true", index);
           courseDetails.waitingList.splice(index, 1);
           inEnrolledList = true;
           courseDetails.save();

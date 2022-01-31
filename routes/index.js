@@ -4,7 +4,11 @@ export const router = express.Router();
 import { courseRouter } from "./course.js";
 
 router.use("/course", courseRouter);
-
+router.get("/", (req, res) => {
+  res.status(200).json({
+    message: "welcome to the api",
+  });
+});
 router.get("/users", async (req, res) => {
   const users = await User.find({}).exec();
   res.status(200).json({
