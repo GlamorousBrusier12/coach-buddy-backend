@@ -9,94 +9,21 @@ courseRouter.get("/", async (req, res) => {
   res.status(200).json({ data: courses });
 });
 
-courseRouter.get("/create", async (req, res) => {
-  // const courses = [
-  //   {
-  //     name: "GK",
-  //     description: "General knowledge is information",
-  //     maxCapacity: 60,
-  //     startsOn: {
-  //       date: "2021-09-19",
-  //       time: "04:45",
-  //     },
-  //     enrolledStudents: [],
-  //     waitingList: [],
-  //     duration: 120,
-  //   },
-  //   {
-  //     name: "Maths",
-  //     description: "General knowledge is information",
-  //     maxCapacity: 60,
-  //     startsOn: {
-  //       date: "2021-09-19",
-  //       time: "04:45",
-  //     },
-  //     enrolledStudents: [],
-  //     waitingList: [],
-  //     duration: 120,
-  //   },
-  //   {
-  //     name: "Physics",
-  //     description: "General knowledge is information",
-  //     maxCapacity: 60,
-  //     startsOn: {
-  //       date: "2021-09-19",
-  //       time: "04:45",
-  //     },
-  //     enrolledStudents: [],
-  //     waitingList: [],
-  //     duration: 120,
-  //   },
-  //   {
-  //     name: "Yoga",
-  //     description: "General knowledge is information",
-  //     maxCapacity: 60,
-  //     startsOn: {
-  //       date: "2021-09-19",
-  //       time: "04:45",
-  //     },
-  //     enrolledStudents: [],
-  //     waitingList: [],
-  //     duration: 120,
-  //   },
-  //   {
-  //     name: "Gymnastics",
-  //     description: "General knowledge is information",
-  //     maxCapacity: 60,
-  //     startsOn: {
-  //       date: "2021-09-19",
-  //       time: "04:45",
-  //     },
-  //     enrolledStudents: [],
-  //     waitingList: [],
-  //     duration: 120,
-  //   },
-  // ];
-  // try {
-  //   const newCreatedCourses = await Course.create(courses);
-  //   res
-  //     .status(200)
-  //     .json({ message: "Courses created", data: newCreatedCourses });
-  // } catch (e) {
-  //   console.log(e);
-  //   res.status(400).end();
-  // }
-});
+// course enrollment
 courseRouter.post("/enroll/:id", async (req, res) => {
   const courseId = req.params.id;
   const user = { name: req.body.name, email: req.body.email };
-  console.log(courseId);
-  console.log(user);
   try {
     const courseDetails = await Course.findById(courseId)
       .populate("enrolledStudents")
       .exec();
-    //console.log("populated CourseDetails ", courseDetails);
+    // finds the user
     let userDetails = await User.findOne({ email: user.email }).exec();
     if (!userDetails) {
       const newUser = await User.create(user);
       userDetails = newUser;
     }
+    // checks if already registered
     let alreadyRegistered = false;
     courseDetails.enrolledStudents.forEach((u) => {
       if (u._id.toString() === userDetails._id.toString()) {
@@ -110,6 +37,7 @@ courseRouter.post("/enroll/:id", async (req, res) => {
         status: "already registered",
       });
     }
+    // adding to the waiting list
     if (courseDetails.maxCapacity === courseDetails.enrolledStudents.length) {
       courseDetails.waitingList.forEach((u) => {
         if (u._id.toString() === userDetails._id.toString()) {
@@ -147,6 +75,7 @@ courseRouter.post("/enroll/:id", async (req, res) => {
   // res.status(200).json({ message: "OK" });
 });
 
+// cheecking the eligiblity of the cancelation of the enrollment
 function checkEligibility(courseDetails) {
   const hrs = parseInt(courseDetails.time.slice(0, 2));
   const min = parseInt(courseDetails.time.slice(3));
@@ -180,7 +109,7 @@ courseRouter.post("/unenroll/:id", async (req, res) => {
       res.status(200).json({ message: "not registered to any course" });
     }
     if (!checkEligibility(courseDetails.startsOn)) {
-      console.log("eligibility failed");
+      //console.log("eligibility failed");
       return res.status(200).json({
         message: "cannot unenroll in last minute",
         status: "unenroll failed",
