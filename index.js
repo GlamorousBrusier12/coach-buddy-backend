@@ -5,7 +5,6 @@ import bodyParser from "body-parser";
 import { db } from "./config/mongoose.js";
 import { router } from "./routes/index.js";
 const app = express();
-
 const PORT = 3001;
 app.use(bodyParser.json({ extended: true }));
 app.use(bodyParser.urlencoded({ extended: true }));

@@ -16,7 +16,16 @@ router.get("/users", async (req, res) => {
     data: users,
   });
 });
-
+router.get("/user/:email", async (req, res) => {
+  const email = req.params.email;
+  const user = await User.findOne({ email: email })
+    .populate({ path: "enrolledCourses" })
+    .exec();
+  res.status(200).json({
+    message: "OK",
+    data: user,
+  });
+});
 router.post("/createuser", async (req, res) => {
   try {
     const existUser = await User.findOne({ email: req.body.email });
@@ -29,6 +38,7 @@ router.post("/createuser", async (req, res) => {
     }
     res.status(200).json({ user: newUser });
   } catch (e) {
+    console.log(e);
     res.status(404).end();
   }
 });
